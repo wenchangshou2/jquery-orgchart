@@ -1,0 +1,130 @@
+<!DOCTYPE HTML>
+
+<html>
+
+<head>
+    <title>Org Chart</title>
+    <link rel="stylesheet" href="demo.css" />
+    <link rel="stylesheet" href="../dist/jquery.orgchart.min.css" />
+    <script src="../libs/jquery/jquery.min.js"></script>
+    <!-- <script src="./jquery.orgchart.js"></script> -->
+    <!-- <script src="./qrchart.js"></script> -->
+    <script src="../dist/jquery.jquery-orgchart.min.js"></script>
+    <!-- <script src="http://192.168.0.178:1337/vorlon.js"></script> -->
+
+
+    <script>
+        $(function () {
+            $("#main").orgchart({
+                // container: $("#main"),
+                renderData: [{
+                    id: 'a',
+                    pid: null,
+                    title: 'test',
+                    text: 'wcs'
+                }, {
+                    id: 'b',
+                    pid: 'a',
+                    title: 'child1',
+                    text: 'child1'
+                }, {
+                    id: 'c',
+                    pid: 'a',
+                    title: 'child1',
+                    text: 'text'
+                },{
+                    id:'d',
+                    pid:'b',
+                    title:'child11',
+                    text:'text11'
+                },{
+                    id:'e',
+                    pid:'b',
+                    title:'child22',
+                    text:'text22'
+                }],
+                // renderData: {
+                //     'text': 'wcs',
+                //     'title': 'test',
+                //     'children': [{
+                //         'text': 'child1',
+                //         'title': 'child1',
+                //     }, {
+                //         'text': 'child2',
+                //         'title': 'child2',
+                //     }, {
+                //         'text': 'child3',
+                //         'title': 'child3',
+                //         'children': [{
+                //                 'text': 'child31',
+                //                 'title': 'child31',
+                //             },
+                //             {
+                //                 'text': 'child32',
+                //                 'title': 'child32',
+                //             }
+                //         ]
+                //     }, {
+                //         'text': 'child4',
+                //         'title': 'title4'
+                //     }]
+                // },
+                renderType: 'json'
+            });
+        });
+    </script>
+</head>
+
+<body>
+
+    <div id="left">
+
+        <ul id="organisation">
+            <li>
+                <adjunct>Alfred</adjunct>
+                <em>Batman</em>
+                <ul>
+                    <li>Batman Begins
+                        <br/>
+                        <ul>
+                            <li>Ra's Al Ghul</li>
+                            <li>Carmine Falconi</li>
+                        </ul>
+                    </li>
+                    <!-- <li>The Dark Knight<br/>
+                            <ul>
+                                <li>Joker</li>
+                                <li>Harvey Dent</li>
+                            </ul>
+                        </li> -->
+                    <!-- <li>The Dark Knight Rises<br/>
+                            <ul>
+                                <li>Bane</li>
+                                <li>Talia Al Ghul</li>
+                            </ul>
+                        </li> -->
+                </ul>
+            </li>
+        </ul>
+
+    </div>
+
+    <div id="content">
+
+        <h1>JQuery/CSS Organisation Chart</h1>
+
+        <div id="main">
+        </div>
+
+        <div class="text">
+            <h2>JQuery</h2>
+            <pre>
+            $("#organisation").orgChart({container: $("#main")});
+                </pre>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

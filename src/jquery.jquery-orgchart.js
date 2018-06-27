@@ -72,6 +72,7 @@
     var func = funcFactory[opts.renderType];
     if (opts.renderType === 'dom') {
       return this.each(function () {
+      console.log('dom11111111');
         var $chartSource = $(this);
         var $this = $chartSource.clone();
         if (opts.levels > -1) {
@@ -91,7 +92,7 @@
           $root = $this;
         }
         if ($root) {
-          // func(opts.renderData, $container, 0, 0, opts);
+          func($root, $container, 0, 0, opts);
           $container.find("div.node a").click(function (evt) {
             evt.stopImmediatePropagation();
           });
@@ -111,7 +112,7 @@
         $root = opts.renderData.filter((item) => {
           return item.pid === null;
         });
-        if ($root.length>0) {
+        if ($root.length > 0) {
           opts.renderData = smartArrayToTree(opts.renderData);
           func(opts.renderData, $container, 0, 0, opts);
           $container.find("div.node a").click(function (evt) {
@@ -233,17 +234,7 @@
           $td.attr("colspan", 2);
           jsonBuildNode($childNodes[key], $td, level + 1, index, opts);
           $childNodesRow.append($td);
-          console.log('td', $td);
-          // console.log('key',key);
         }
-        // $childNodes.each(function (index) {
-        //     console.log('this',this);
-        //     var $td = $("<td/>");
-        //     $td.attr("colspan", 2);
-        //     jsonBuildNode($(this), $td, level + 1, index, opts);
-        //     $childNodesRow.append($(this), $td, level + 1, index, opts);
-        //     $childNodesRow.append($td);
-        // });
         $tbody.append($childNodesRow);
       } else if (opts.stack) {
         var $stackNodes = $childNodes.clone();
