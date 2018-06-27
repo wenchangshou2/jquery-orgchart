@@ -1,0 +1,26 @@
+{
+  "name": "jquery-orgchart",
+  "title": "jQuery Orgchart",
+  "description": "组织结构图",
+  "version": "0.1.0",
+  "homepage": "git@github.com:wenchangshou2/jquery-orgchart.git",
+  "author": {
+    "name": "wcs",
+    "email": "wenchangshou@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:wenchangshou2/jquery-orgchart.git"
+  },
+  "bugs": "git@github.com:wenchangshou2/jquery-orgchart.git/issuse",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "git@github.com:wenchangshou2/jquery-orgchart.git/blob/master/LICENSE-MIT"
+    }
+  ],
+  "dependencies": {
+    "jquery": "3.3.1"
+  },
+  "keywords": []
+}
