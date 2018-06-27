@@ -66,6 +66,17 @@ module.exports = function (grunt) {
         src: ['test/**/*.js']
       },
     },
+    babel: {
+      options: {
+        sourceMap: true,
+        presets: ['env']
+      },
+      dist: {
+        files: {
+          'dist/jquery.jquery-orgchart.js': 'dist/jquery.jquery-orgchart.js'
+        }
+      }
+    },
     watch: {
       gruntfile: {
         files: '<%= jshint.gruntfile.src %>',
@@ -90,8 +101,9 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-cssmin');
+  grunt.loadNpmTasks('grunt-babel');
 
   // Default task.
-  grunt.registerTask('default', ['jshint', /*'qunit',*/ 'clean', 'concat', 'cssmin', 'uglify']);
+  grunt.registerTask('default', ['jshint', /*'qunit',*/ 'clean', 'concat', 'cssmin','babel', 'uglify']);
 
 };

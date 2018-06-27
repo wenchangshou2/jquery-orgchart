@@ -11,6 +11,7 @@
     dom: buildNode,
     json: jsonBuildNode
   };
+
   function baseAssignValue(object, key, value) {
     if (key === '__proto__') {
       Object.defineProperty(object, key, {
@@ -23,8 +24,9 @@
       object[key] = value;
     }
   }
+
   function groupBy(collection, iteratee) {
-    return _.reduce(collection, function(result, value, key)  {
+    return _.reduce(collection, function (result, value, key) {
       key = iteratee(value);
       if (hasOwnProperty.call(result, key)) {
         result[key].push(value);
@@ -43,10 +45,10 @@
       firstPid: null
     }, options);
     var groupArray = groupBy(array, function (n) {
-      console.log('n',n);
+      console.log('n', n);
       return n[options.pid];
     });
-    console.log('array',groupArray);
+    console.log('array', groupArray);
     var firstArray = groupArray[options.firstPid];
     transform(firstArray);
 
@@ -67,40 +69,61 @@
   // Static method.
   $.fn.orgchart = function (options) {
     var opts = $.extend({}, $.fn.orgchart.defaults, options);
-    opts.renderData = smartArrayToTree(opts.renderData);
-    return this.each(function () {
-      console.log('this', this);
-      var $chartSource = $(this);
-      var $this = $chartSource.clone();
-      if (opts.levels > -1) {
-        $this.find("ul").andSelf().filter(function () {
-          return $chartSource.parsents("ul").length + 1 > opts.levelobjects;
-        }).remove();
-      }
-      $this.data("chart-source", $chartSource);
-      var $container = $("<div class='" + opts.chartClass + "'/>");
-      if (opts.interactive) {
-        $container.addClass("interactive");
-      }
-      var $root;
-      if ($this.is("ul")) {
-        $root = $this.find("li:first");
-      } else if ($this.is("li")) {
-        $root = $this;
-      }
-      if ($root) {
-        var func = funcFactory['json'];
-        func(opts.renderData, $container, 0, 0, opts);
-        // buildNode($root, $container, 0, 0, opts);
-        $container.find("div.node a").click(function (evt) {
-          evt.stopImmediatePropagation();
-        });
-        if (opts.replace) {
-          opts.container.empty();
+    var func = funcFactory[opts.renderType];
+    if (opts.renderType === 'dom') {
+      return this.each(function () {
+        var $chartSource = $(this);
+        var $this = $chartSource.clone();
+        if (opts.levels > -1) {
+          $this.find("ul").andSelf().filter(function () {
+            return $chartSource.parsents("ul").length + 1 > opts.levelobjects;
+          }).remove();
         }
-        opts.container.append($container);
-      }
-    });
+        $this.data("chart-source", $chartSource);
+        var $container = $("<div class='" + opts.chartClass + "'/>");
+        if (opts.interactive) {
+          $container.addClass("interactive");
+        }
+        var $root;
+        if ($this.is("ul")) {
+          $root = $this.find("li:first");
+        } else if ($this.is("li")) {
+          $root = $this;
+        }
+        if ($root) {
+          // func(opts.renderData, $container, 0, 0, opts);
+          $container.find("div.node a").click(function (evt) {
+            evt.stopImmediatePropagation();
+          });
+          if (opts.replace) {
+            opts.container.empty();
+          }
+          opts.container.append($container);
+        }
+      });
+    } else if (opts.renderType === 'json') {
+      return this.each(function () {
+        var $container = $("<div class='" + opts.chartClass + "'/>");
+        if (opts.interactive) {
+          $container.addClass("interactive");
+        }
+        var $root;
+        $root = opts.renderData.filter((item) => {
+          return item.pid === null;
+        });
+        if ($root.length>0) {
+          opts.renderData = smartArrayToTree(opts.renderData);
+          func(opts.renderData, $container, 0, 0, opts);
+          $container.find("div.node a").click(function (evt) {
+            evt.stopImmediatePropagation();
+          });
+          if (opts.replace) {
+            opts.container.empty();
+          }
+          $(this).append($container);
+        }
+      });
+    }
   };
 
   $.fn.orgchart.defaults = {

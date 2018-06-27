@@ -1,3 +1,7 @@
+'use strict';
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 /*! jQuery Orgchart - v0.1.0 - 2018-06-27
 * git@github.com:wenchangshou2/jquery-orgchart.git
 * Copyright (c) 2018 wcs; Licensed MIT */
@@ -7,6 +11,7 @@
     dom: buildNode,
     json: jsonBuildNode
   };
+
   function baseAssignValue(object, key, value) {
     if (key === '__proto__') {
       Object.defineProperty(object, key, {
@@ -19,8 +24,9 @@
       object[key] = value;
     }
   }
+
   function groupBy(collection, iteratee) {
-    return _.reduce(collection, function(result, value, key)  {
+    return _.reduce(collection, function (result, value, key) {
       key = iteratee(value);
       if (hasOwnProperty.call(result, key)) {
         result[key].push(value);
@@ -31,7 +37,7 @@
     }, {});
   }
 
-  var smartArrayToTree = function (array, options) {
+  var smartArrayToTree = function smartArrayToTree(array, options) {
     options = Object.assign({
       id: 'id',
       pid: 'pid',
@@ -39,10 +45,10 @@
       firstPid: null
     }, options);
     var groupArray = groupBy(array, function (n) {
-      console.log('n',n);
+      console.log('n', n);
       return n[options.pid];
     });
-    console.log('array',groupArray);
+    console.log('array', groupArray);
     var firstArray = groupArray[options.firstPid];
     transform(firstArray);
 
@@ -63,40 +69,61 @@
   // Static method.
   $.fn.orgchart = function (options) {
     var opts = $.extend({}, $.fn.orgchart.defaults, options);
-    opts.renderData = smartArrayToTree(opts.renderData);
-    return this.each(function () {
-      console.log('this', this);
-      var $chartSource = $(this);
-      var $this = $chartSource.clone();
-      if (opts.levels > -1) {
-        $this.find("ul").andSelf().filter(function () {
-          return $chartSource.parsents("ul").length + 1 > opts.levelobjects;
-        }).remove();
-      }
-      $this.data("chart-source", $chartSource);
-      var $container = $("<div class='" + opts.chartClass + "'/>");
-      if (opts.interactive) {
-        $container.addClass("interactive");
-      }
-      var $root;
-      if ($this.is("ul")) {
-        $root = $this.find("li:first");
-      } else if ($this.is("li")) {
-        $root = $this;
-      }
-      if ($root) {
-        var func = funcFactory['json'];
-        func(opts.renderData, $container, 0, 0, opts);
-        // buildNode($root, $container, 0, 0, opts);
-        $container.find("div.node a").click(function (evt) {
-          evt.stopImmediatePropagation();
-        });
-        if (opts.replace) {
-          opts.container.empty();
+    var func = funcFactory[opts.renderType];
+    if (opts.renderType === 'dom') {
+      return this.each(function () {
+        var $chartSource = $(this);
+        var $this = $chartSource.clone();
+        if (opts.levels > -1) {
+          $this.find("ul").andSelf().filter(function () {
+            return $chartSource.parsents("ul").length + 1 > opts.levelobjects;
+          }).remove();
         }
-        opts.container.append($container);
-      }
-    });
+        $this.data("chart-source", $chartSource);
+        var $container = $("<div class='" + opts.chartClass + "'/>");
+        if (opts.interactive) {
+          $container.addClass("interactive");
+        }
+        var $root;
+        if ($this.is("ul")) {
+          $root = $this.find("li:first");
+        } else if ($this.is("li")) {
+          $root = $this;
+        }
+        if ($root) {
+          // func(opts.renderData, $container, 0, 0, opts);
+          $container.find("div.node a").click(function (evt) {
+            evt.stopImmediatePropagation();
+          });
+          if (opts.replace) {
+            opts.container.empty();
+          }
+          opts.container.append($container);
+        }
+      });
+    } else if (opts.renderType === 'json') {
+      return this.each(function () {
+        var $container = $("<div class='" + opts.chartClass + "'/>");
+        if (opts.interactive) {
+          $container.addClass("interactive");
+        }
+        var $root;
+        $root = opts.renderData.filter(function (item) {
+          return item.pid === null;
+        });
+        if ($root.length > 0) {
+          opts.renderData = smartArrayToTree(opts.renderData);
+          func(opts.renderData, $container, 0, 0, opts);
+          $container.find("div.node a").click(function (evt) {
+            evt.stopImmediatePropagation();
+          });
+          if (opts.replace) {
+            opts.container.empty();
+          }
+          $(this).append($container);
+        }
+      });
+    }
   };
 
   $.fn.orgchart.defaults = {
@@ -107,16 +134,16 @@
     stack: false,
     chartClass: "orgChart",
     hoverClass: "hover",
-    nodeText: function ($node) {
+    nodeText: function nodeText($node) {
       return $node.clone().children("ul,li").remove().end().html();
     },
-    isArray: function (arr) {
+    isArray: function isArray(arr) {
       return Array.isArray(arr);
     },
     interactive: false,
     fade: false,
     speed: "slow",
-    nodeClicked: function ($node) {
+    nodeClicked: function nodeClicked($node) {
       console.log($node);
     },
     copyClasses: true,
@@ -125,10 +152,8 @@
     copyTitle: true,
     replace: true,
     renderType: 'dom',
-    renderData: [],
+    renderData: []
   };
-
-
 
   function jsonBuildNode($data, $appendTo, level, index, opts) {
     var $table = $("<table cellpadding='0' cellspacing='0' border='0'/>");
@@ -142,20 +167,13 @@
     }
     var $adjunct = $data.adjunct;
     if ($adjunct) {
-      var $adjunctDiv = $("<div>").addClass("adjunct node")
-        .addClass("level" + level).addClass("node" + index)
-        .addClass("level" + level + "-node" + index)
-        .append($adjunct);
+      var $adjunctDiv = $("<div>").addClass("adjunct node").addClass("level" + level).addClass("node" + index).addClass("level" + level + "-node" + index).append($adjunct);
       $adjunctDiv.appendTo($nodeCell);
       var $linkDiv = $("<div>").addClass("adjunct-link");
       $linkDiv.appendTo($nodeCell);
     }
     var $heading = $("<h2>").html($data.text);
-    var $nodeDiv = $("<div>").addClass("node")
-      .addClass("level" + level)
-      .addClass("node" + index)
-      .addClass("level" + level + "-node" + index)
-      .append($heading);
+    var $nodeDiv = $("<div>").addClass("node").addClass("level" + level).addClass("node" + index).addClass("level" + level + "-node" + index).append($heading);
 
     $nodeCell.append($nodeDiv);
     $nodeRow.append($nodeCell);
@@ -193,13 +211,12 @@
           var $left = $("<td/>").addClass("line left top");
           var $right = $("<td/>").addClass("line right top");
           $linesRow.append($left).append($right);
-
         }
         $linesRow.find("td:first").removeClass("top");
         $linesRow.find("td:last").removeClass("top");
         $tbody.append($linesRow);
         var $childNodesRow = $("<tr/>");
-        console.log('childnodes', $childNodes, typeof $childNodes);
+        console.log('childnodes', $childNodes, typeof $childNodes === 'undefined' ? 'undefined' : _typeof($childNodes));
         for (key in $childNodes) {
           console.log('key', $childNodes[key]);
           var $td = $("<td/>");
@@ -246,10 +263,7 @@
     }
     var $adjunct = $node.children("adjunct").eq(0);
     if ($adjunct.length > 0) {
-      var $adjunctDiv = $("<div>").addClass("adjunct node")
-        .addClass("level" + level).addClass("node" + index)
-        .addClass("level" + level + "-node" + index)
-        .append(opts.nodeText($adjunct));
+      var $adjunctDiv = $("<div>").addClass("adjunct node").addClass("level" + level).addClass("node" + index).addClass("level" + level + "-node" + index).append(opts.nodeText($adjunct));
       $adjunctDiv.appendTo($nodeCell);
       var $linkDiv = $("<div>").addClass("adjunct-link");
       $linkDiv.appendTo($nodeCell);
@@ -257,11 +271,7 @@
     }
 
     var $heading = $("<h2>").html(opts.nodeText($node));
-    var $nodeDiv = $("<div>").addClass("node")
-      .addClass("level" + level)
-      .addClass("node" + index)
-      .addClass("level" + level + "-node" + index)
-      .append($heading);
+    var $nodeDiv = $("<div>").addClass("node").addClass("level" + level).addClass("node" + index).addClass("level" + level + "-node" + index).append($heading);
     //从源列表 chart结点复制class
     if (opts.copyClasses) {
       $nodeDiv.addClass($node.attr("class"));
@@ -372,9 +382,8 @@
     $table.append($tbody);
     $appendTo.append($table);
   }
-
-}(jQuery));
-;(function() {
+})(jQuery);
+;(function () {
 
   /** Used as a safe reference for `undefined` in pre-ES5 environments. */
   var undefined;
@@ -429,19 +438,19 @@
   };
 
   /** Detect free variable `global` from Node.js. */
-  var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
+  var freeGlobal = (typeof global === 'undefined' ? 'undefined' : _typeof(global)) == 'object' && global && global.Object === Object && global;
 
   /** Detect free variable `self`. */
-  var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+  var freeSelf = (typeof self === 'undefined' ? 'undefined' : _typeof(self)) == 'object' && self && self.Object === Object && self;
 
   /** Used as a reference to the global object. */
   var root = freeGlobal || freeSelf || Function('return this')();
 
   /** Detect free variable `exports`. */
-  var freeExports = typeof exports == 'object' && exports && !exports.nodeType && exports;
+  var freeExports = (typeof exports === 'undefined' ? 'undefined' : _typeof(exports)) == 'object' && exports && !exports.nodeType && exports;
 
   /** Detect free variable `module`. */
-  var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
+  var freeModule = freeExports && (typeof module === 'undefined' ? 'undefined' : _typeof(module)) == 'object' && module && !module.nodeType && module;
 
   /*--------------------------------------------------------------------------*/
 
@@ -473,7 +482,7 @@
     var length = array.length,
         index = fromIndex + (fromRight ? 1 : -1);
 
-    while ((fromRight ? index-- : ++index < length)) {
+    while (fromRight ? index-- : ++index < length) {
       if (predicate(array[index], index, array)) {
         return index;
       }
@@ -489,7 +498,7 @@
    * @returns {Function} Returns the new accessor function.
    */
   function baseProperty(key) {
-    return function(object) {
+    return function (object) {
       return object == null ? undefined : object[key];
     };
   }
@@ -502,7 +511,7 @@
    * @returns {Function} Returns the new accessor function.
    */
   function basePropertyOf(object) {
-    return function(key) {
+    return function (key) {
       return object == null ? undefined : object[key];
     };
   }
@@ -521,10 +530,8 @@
    * @returns {*} Returns the accumulated value.
    */
   function baseReduce(collection, iteratee, accumulator, initAccum, eachFunc) {
-    eachFunc(collection, function(value, index, collection) {
-      accumulator = initAccum
-        ? (initAccum = false, value)
-        : iteratee(accumulator, value, index, collection);
+    eachFunc(collection, function (value, index, collection) {
+      accumulator = initAccum ? (initAccum = false, value) : iteratee(accumulator, value, index, collection);
     });
     return accumulator;
   }
@@ -540,7 +547,7 @@
    * @returns {Object} Returns the array of property values.
    */
   function baseValues(object, props) {
-    return baseMap(props, function(key) {
+    return baseMap(props, function (key) {
       return object[key];
     });
   }
@@ -563,7 +570,7 @@
    * @returns {Function} Returns the new function.
    */
   function overArg(func, transform) {
-    return function(arg) {
+    return function (arg) {
       return func(transform(arg));
     };
   }
@@ -719,9 +726,7 @@
    * // => true
    */
   function lodash(value) {
-    return value instanceof LodashWrapper
-      ? value
-      : new LodashWrapper(value);
+    return value instanceof LodashWrapper ? value : new LodashWrapper(value);
   }
 
   /**
@@ -732,9 +737,9 @@
    * @param {Object} proto The object to inherit from.
    * @returns {Object} Returns the new object.
    */
-  var baseCreate = (function() {
+  var baseCreate = function () {
     function object() {}
-    return function(proto) {
+    return function (proto) {
       if (!isObject(proto)) {
         return {};
       }
@@ -742,11 +747,11 @@
         return objectCreate(proto);
       }
       object.prototype = proto;
-      var result = new object;
+      var result = new object();
       object.prototype = undefined;
       return result;
     };
-  }());
+  }();
 
   /**
    * The base constructor for creating `lodash` wrapper objects.
@@ -778,8 +783,7 @@
    */
   function assignValue(object, key, value) {
     var objValue = object[key];
-    if (!(hasOwnProperty.call(object, key) && eq(objValue, value)) ||
-        (value === undefined && !(key in object))) {
+    if (!(hasOwnProperty.call(object, key) && eq(objValue, value)) || value === undefined && !(key in object)) {
       baseAssignValue(object, key, value);
     }
   }
@@ -811,7 +815,9 @@
     if (typeof func != 'function') {
       throw new TypeError(FUNC_ERROR_TEXT);
     }
-    return setTimeout(function() { func.apply(undefined, args); }, wait);
+    return setTimeout(function () {
+      func.apply(undefined, args);
+    }, wait);
   }
 
   /**
@@ -835,7 +841,7 @@
    */
   function baseEvery(collection, predicate) {
     var result = true;
-    baseEach(collection, function(value, index, collection) {
+    baseEach(collection, function (value, index, collection) {
       result = !!predicate(value, index, collection);
       return result;
     });
@@ -860,10 +866,7 @@
       var value = array[index],
           current = iteratee(value);
 
-      if (current != null && (computed === undefined
-            ? (current === current && !false)
-            : comparator(current, computed)
-          )) {
+      if (current != null && (computed === undefined ? current === current && !false : comparator(current, computed))) {
         var computed = current,
             result = value;
       }
@@ -881,7 +884,7 @@
    */
   function baseFilter(collection, predicate) {
     var result = [];
-    baseEach(collection, function(value, index, collection) {
+    baseEach(collection, function (value, index, collection) {
       if (predicate(value, index, collection)) {
         result.push(value);
       }
@@ -958,7 +961,7 @@
    * @returns {Array} Returns the function names.
    */
   function baseFunctions(object, props) {
-    return baseFilter(props, function(key) {
+    return baseFilter(props, function (key) {
       return isFunction(object[key]);
     });
   }
@@ -1025,7 +1028,7 @@
     if (value === other) {
       return true;
     }
-    if (value == null || other == null || (!isObjectLike(value) && !isObjectLike(other))) {
+    if (value == null || other == null || !isObjectLike(value) && !isObjectLike(other)) {
       return value !== value && other !== other;
     }
     return baseIsEqualDeep(value, other, bitmask, customizer, baseIsEqual, stack);
@@ -1059,10 +1062,10 @@
         isSameTag = objTag == othTag;
 
     stack || (stack = []);
-    var objStack = find(stack, function(entry) {
+    var objStack = find(stack, function (entry) {
       return entry[0] == object;
     });
-    var othStack = find(stack, function(entry) {
+    var othStack = find(stack, function (entry) {
       return entry[0] == other;
     });
     if (objStack && othStack) {
@@ -1071,9 +1074,7 @@
     stack.push([object, other]);
     stack.push([other, object]);
     if (isSameTag && !objIsObj) {
-      var result = (objIsArr)
-        ? equalArrays(object, other, bitmask, customizer, equalFunc, stack)
-        : equalByTag(object, other, objTag, bitmask, customizer, equalFunc, stack);
+      var result = objIsArr ? equalArrays(object, other, bitmask, customizer, equalFunc, stack) : equalByTag(object, other, objTag, bitmask, customizer, equalFunc, stack);
       stack.pop();
       return result;
     }
@@ -1123,7 +1124,7 @@
     if (func == null) {
       return identity;
     }
-    return (typeof func == 'object' ? baseMatches : baseProperty)(func);
+    return ((typeof func === 'undefined' ? 'undefined' : _typeof(func)) == 'object' ? baseMatches : baseProperty)(func);
   }
 
   /**
@@ -1151,7 +1152,7 @@
     var index = -1,
         result = isArrayLike(collection) ? Array(collection.length) : [];
 
-    baseEach(collection, function(value, key, collection) {
+    baseEach(collection, function (value, key, collection) {
       result[++index] = iteratee(value, key, collection);
     });
     return result;
@@ -1166,7 +1167,7 @@
    */
   function baseMatches(source) {
     var props = nativeKeys(source);
-    return function(object) {
+    return function (object) {
       var length = props.length;
       if (object == null) {
         return !length;
@@ -1174,9 +1175,7 @@
       object = Object(object);
       while (length--) {
         var key = props[length];
-        if (!(key in object &&
-              baseIsEqual(source[key], object[key], COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG)
-            )) {
+        if (!(key in object && baseIsEqual(source[key], object[key], COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG))) {
           return false;
         }
       }
@@ -1195,7 +1194,7 @@
    */
   function basePick(object, props) {
     object = Object(object);
-    return reduce(props, function(result, key) {
+    return reduce(props, function (result, key) {
       if (key in object) {
         result[key] = object[key];
       }
@@ -1229,13 +1228,13 @@
         length = array.length;
 
     if (start < 0) {
-      start = -start > length ? 0 : (length + start);
+      start = -start > length ? 0 : length + start;
     }
     end = end > length ? length : end;
     if (end < 0) {
       end += length;
     }
-    length = start > end ? 0 : ((end - start) >>> 0);
+    length = start > end ? 0 : end - start >>> 0;
     start >>>= 0;
 
     var result = Array(length);
@@ -1269,7 +1268,7 @@
   function baseSome(collection, predicate) {
     var result;
 
-    baseEach(collection, function(value, index, collection) {
+    baseEach(collection, function (value, index, collection) {
       result = predicate(value, index, collection);
       return !result;
     });
@@ -1288,7 +1287,7 @@
    */
   function baseWrapperValue(value, actions) {
     var result = value;
-    return reduce(actions, function(result, action) {
+    return reduce(actions, function (result, action) {
       return action.func.apply(action.thisArg, arrayPush([result], action.args));
     }, result);
   }
@@ -1313,18 +1312,10 @@
           othIsReflexive = other === other,
           othIsSymbol = false;
 
-      if ((!othIsNull && !othIsSymbol && !valIsSymbol && value > other) ||
-          (valIsSymbol && othIsDefined && othIsReflexive && !othIsNull && !othIsSymbol) ||
-          (valIsNull && othIsDefined && othIsReflexive) ||
-          (!valIsDefined && othIsReflexive) ||
-          !valIsReflexive) {
+      if (!othIsNull && !othIsSymbol && !valIsSymbol && value > other || valIsSymbol && othIsDefined && othIsReflexive && !othIsNull && !othIsSymbol || valIsNull && othIsDefined && othIsReflexive || !valIsDefined && othIsReflexive || !valIsReflexive) {
         return 1;
       }
-      if ((!valIsNull && !valIsSymbol && !othIsSymbol && value < other) ||
-          (othIsSymbol && valIsDefined && valIsReflexive && !valIsNull && !valIsSymbol) ||
-          (othIsNull && valIsDefined && valIsReflexive) ||
-          (!othIsDefined && valIsReflexive) ||
-          !othIsReflexive) {
+      if (!valIsNull && !valIsSymbol && !othIsSymbol && value < other || othIsSymbol && valIsDefined && valIsReflexive && !valIsNull && !valIsSymbol || othIsNull && valIsDefined && valIsReflexive || !othIsDefined && valIsReflexive || !othIsReflexive) {
         return -1;
       }
     }
@@ -1351,9 +1342,7 @@
     while (++index < length) {
       var key = props[index];
 
-      var newValue = customizer
-        ? customizer(object[key], source[key], key, object, source)
-        : undefined;
+      var newValue = customizer ? customizer(object[key], source[key], key, object, source) : undefined;
 
       if (newValue === undefined) {
         newValue = source[key];
@@ -1375,14 +1364,12 @@
    * @returns {Function} Returns the new assigner function.
    */
   function createAssigner(assigner) {
-    return baseRest(function(object, sources) {
+    return baseRest(function (object, sources) {
       var index = -1,
           length = sources.length,
           customizer = length > 1 ? sources[length - 1] : undefined;
 
-      customizer = (assigner.length > 3 && typeof customizer == 'function')
-        ? (length--, customizer)
-        : undefined;
+      customizer = assigner.length > 3 && typeof customizer == 'function' ? (length--, customizer) : undefined;
 
       object = Object(object);
       while (++index < length) {
@@ -1404,7 +1391,7 @@
    * @returns {Function} Returns the new base function.
    */
   function createBaseEach(eachFunc, fromRight) {
-    return function(collection, iteratee) {
+    return function (collection, iteratee) {
       if (collection == null) {
         return collection;
       }
@@ -1415,7 +1402,7 @@
           index = fromRight ? length : -1,
           iterable = Object(collection);
 
-      while ((fromRight ? index-- : ++index < length)) {
+      while (fromRight ? index-- : ++index < length) {
         if (iteratee(iterable[index], index, iterable) === false) {
           break;
         }
@@ -1432,7 +1419,7 @@
    * @returns {Function} Returns the new base function.
    */
   function createBaseFor(fromRight) {
-    return function(object, iteratee, keysFunc) {
+    return function (object, iteratee, keysFunc) {
       var index = -1,
           iterable = Object(object),
           props = keysFunc(object),
@@ -1457,7 +1444,7 @@
    * @returns {Function} Returns the new wrapped function.
    */
   function createCtor(Ctor) {
-    return function() {
+    return function () {
       // Use a `switch` statement to work with class constructors. See
       // http://ecma-international.org/ecma-262/7.0/#sec-ecmascript-function-objects-call-thisargument-argumentslist
       // for more details.
@@ -1479,12 +1466,14 @@
    * @returns {Function} Returns the new find function.
    */
   function createFind(findIndexFunc) {
-    return function(collection, predicate, fromIndex) {
+    return function (collection, predicate, fromIndex) {
       var iterable = Object(collection);
       if (!isArrayLike(collection)) {
         var iteratee = baseIteratee(predicate, 3);
         collection = keys(collection);
-        predicate = function(key) { return iteratee(iterable[key], key, iterable); };
+        predicate = function predicate(key) {
+          return iteratee(iterable[key], key, iterable);
+        };
       }
       var index = findIndexFunc(collection, predicate, fromIndex);
       return index > -1 ? iterable[iteratee ? collection[index] : index] : undefined;
@@ -1516,7 +1505,7 @@
           leftIndex = -1,
           leftLength = partials.length,
           args = Array(leftLength + argsLength),
-          fn = (this && this !== root && this instanceof wrapper) ? Ctor : func;
+          fn = this && this !== root && this instanceof wrapper ? Ctor : func;
 
       while (++leftIndex < leftLength) {
         args[leftIndex] = partials[leftIndex];
@@ -1552,7 +1541,7 @@
     }
     var index = -1,
         result = true,
-        seen = (bitmask & COMPARE_UNORDERED_FLAG) ? [] : undefined;
+        seen = bitmask & COMPARE_UNORDERED_FLAG ? [] : undefined;
 
     // Ignore non-index properties.
     while (++index < arrLength) {
@@ -1569,19 +1558,15 @@
       }
       // Recursively compare arrays (susceptible to call stack limits).
       if (seen) {
-        if (!baseSome(other, function(othValue, othIndex) {
-              if (!indexOf(seen, othIndex) &&
-                  (arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
-                return seen.push(othIndex);
-              }
-            })) {
+        if (!baseSome(other, function (othValue, othIndex) {
+          if (!indexOf(seen, othIndex) && (arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
+            return seen.push(othIndex);
+          }
+        })) {
           result = false;
           break;
         }
-      } else if (!(
-            arrValue === othValue ||
-              equalFunc(arrValue, othValue, bitmask, customizer, stack)
-          )) {
+      } else if (!(arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
         result = false;
         break;
       }
@@ -1624,7 +1609,7 @@
         // Coerce regexes to strings and treat strings, primitives and objects,
         // as equal. See http://www.ecma-international.org/ecma-262/7.0/#sec-regexp.prototype.tostring
         // for more details.
-        return object == (other + '');
+        return object == other + '';
 
     }
     return false;
@@ -1670,10 +1655,7 @@
 
       var compared;
       // Recursively compare objects (susceptible to call stack limits).
-      if (!(compared === undefined
-            ? (objValue === othValue || equalFunc(objValue, othValue, bitmask, customizer, stack))
-            : compared
-          )) {
+      if (!(compared === undefined ? objValue === othValue || equalFunc(objValue, othValue, bitmask, customizer, stack) : compared)) {
         result = false;
         break;
       }
@@ -1684,10 +1666,7 @@
           othCtor = other.constructor;
 
       // Non `Object` object instances with different constructors are not equal.
-      if (objCtor != othCtor &&
-          ('constructor' in object && 'constructor' in other) &&
-          !(typeof objCtor == 'function' && objCtor instanceof objCtor &&
-            typeof othCtor == 'function' && othCtor instanceof othCtor)) {
+      if (objCtor != othCtor && 'constructor' in object && 'constructor' in other && !(typeof objCtor == 'function' && objCtor instanceof objCtor && typeof othCtor == 'function' && othCtor instanceof othCtor)) {
         result = false;
       }
     }
@@ -1725,13 +1704,10 @@
    * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
    */
   function isIndex(value, length) {
-    var type = typeof value;
+    var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
     length = length == null ? MAX_SAFE_INTEGER : length;
 
-    return !!length &&
-      (type == 'number' ||
-        (type != 'symbol' && reIsUint.test(value))) &&
-          (value > -1 && value % 1 == 0 && value < length);
+    return !!length && (type == 'number' || type != 'symbol' && reIsUint.test(value)) && value > -1 && value % 1 == 0 && value < length;
   }
 
   /**
@@ -1748,11 +1724,8 @@
     if (!isObject(object)) {
       return false;
     }
-    var type = typeof index;
-    if (type == 'number'
-          ? (isArrayLike(object) && isIndex(index, object.length))
-          : (type == 'string' && index in object)
-        ) {
+    var type = typeof index === 'undefined' ? 'undefined' : _typeof(index);
+    if (type == 'number' ? isArrayLike(object) && isIndex(index, object.length) : type == 'string' && index in object) {
       return eq(object[index], value);
     }
     return false;
@@ -1798,8 +1771,8 @@
    * @returns {Function} Returns the new function.
    */
   function overRest(func, start, transform) {
-    start = nativeMax(start === undefined ? (func.length - 1) : start, 0);
-    return function() {
+    start = nativeMax(start === undefined ? func.length - 1 : start, 0);
+    return function () {
       var args = arguments,
           index = -1,
           length = nativeMax(args.length - start, 0),
@@ -1990,7 +1963,7 @@
    * // => undefined
    */
   function head(array) {
-    return (array && array.length) ? array[0] : undefined;
+    return array && array.length ? array[0] : undefined;
   }
 
   /**
@@ -2028,7 +2001,7 @@
 
     while (++index < length) {
       var other = array[index];
-      if ((isReflexive ? other === value : other !== other)) {
+      if (isReflexive ? other === value : other !== other) {
         return index;
       }
     }
@@ -2569,10 +2542,10 @@
     var index = 0;
     iteratee = baseIteratee(iteratee);
 
-    return baseMap(baseMap(collection, function(value, key, collection) {
+    return baseMap(baseMap(collection, function (value, key, collection) {
       return { 'value': value, 'index': index++, 'criteria': iteratee(value, key, collection) };
-    }).sort(function(object, other) {
-      return compareAscending(object.criteria, other.criteria) || (object.index - other.index);
+    }).sort(function (object, other) {
+      return compareAscending(object.criteria, other.criteria) || object.index - other.index;
     }), baseProperty('value'));
   }
 
@@ -2601,7 +2574,7 @@
       throw new TypeError(FUNC_ERROR_TEXT);
     }
     n = toInteger(n);
-    return function() {
+    return function () {
       if (--n > 0) {
         result = func.apply(this, arguments);
       }
@@ -2647,7 +2620,7 @@
    * bound('hi');
    * // => 'hi fred!'
    */
-  var bind = baseRest(function(func, thisArg, partials) {
+  var bind = baseRest(function (func, thisArg, partials) {
     return createPartial(func, WRAP_BIND_FLAG | WRAP_PARTIAL_FLAG, thisArg, partials);
   });
 
@@ -2669,7 +2642,7 @@
    * }, 'deferred');
    * // => Logs 'deferred' after one millisecond.
    */
-  var defer = baseRest(function(func, args) {
+  var defer = baseRest(function (func, args) {
     return baseDelay(func, 1, args);
   });
 
@@ -2692,7 +2665,7 @@
    * }, 1000, 'later');
    * // => Logs 'later' after one second.
    */
-  var delay = baseRest(function(func, wait, args) {
+  var delay = baseRest(function (func, wait, args) {
     return baseDelay(func, toNumber(wait) || 0, args);
   });
 
@@ -2720,7 +2693,7 @@
     if (typeof predicate != 'function') {
       throw new TypeError(FUNC_ERROR_TEXT);
     }
-    return function() {
+    return function () {
       var args = arguments;
       return !predicate.apply(this, args);
     };
@@ -2816,7 +2789,7 @@
    * // => true
    */
   function eq(value, other) {
-    return value === other || (value !== value && other !== other);
+    return value === other || value !== value && other !== other;
   }
 
   /**
@@ -2837,9 +2810,10 @@
    * _.isArguments([1, 2, 3]);
    * // => false
    */
-  var isArguments = baseIsArguments(function() { return arguments; }()) ? baseIsArguments : function(value) {
-    return isObjectLike(value) && hasOwnProperty.call(value, 'callee') &&
-      !propertyIsEnumerable.call(value, 'callee');
+  var isArguments = baseIsArguments(function () {
+    return arguments;
+  }()) ? baseIsArguments : function (value) {
+    return isObjectLike(value) && hasOwnProperty.call(value, 'callee') && !propertyIsEnumerable.call(value, 'callee');
   };
 
   /**
@@ -2914,8 +2888,7 @@
    * // => false
    */
   function isBoolean(value) {
-    return value === true || value === false ||
-      (isObjectLike(value) && baseGetTag(value) == boolTag);
+    return value === true || value === false || isObjectLike(value) && baseGetTag(value) == boolTag;
   }
 
   /**
@@ -2971,9 +2944,7 @@
    * // => false
    */
   function isEmpty(value) {
-    if (isArrayLike(value) &&
-        (isArray(value) || isString(value) ||
-          isFunction(value.splice) || isArguments(value))) {
+    if (isArrayLike(value) && (isArray(value) || isString(value) || isFunction(value.splice) || isArguments(value))) {
       return !value.length;
     }
     return !nativeKeys(value).length;
@@ -3095,8 +3066,7 @@
    * // => false
    */
   function isLength(value) {
-    return typeof value == 'number' &&
-      value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+    return typeof value == 'number' && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
   }
 
   /**
@@ -3125,7 +3095,7 @@
    * // => false
    */
   function isObject(value) {
-    var type = typeof value;
+    var type = typeof value === 'undefined' ? 'undefined' : _typeof(value);
     return value != null && (type == 'object' || type == 'function');
   }
 
@@ -3154,7 +3124,7 @@
    * // => false
    */
   function isObjectLike(value) {
-    return value != null && typeof value == 'object';
+    return value != null && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) == 'object';
   }
 
   /**
@@ -3240,8 +3210,7 @@
    * // => false
    */
   function isNumber(value) {
-    return typeof value == 'number' ||
-      (isObjectLike(value) && baseGetTag(value) == numberTag);
+    return typeof value == 'number' || isObjectLike(value) && baseGetTag(value) == numberTag;
   }
 
   /**
@@ -3281,8 +3250,7 @@
    * // => false
    */
   function isString(value) {
-    return typeof value == 'string' ||
-      (!isArray(value) && isObjectLike(value) && baseGetTag(value) == stringTag);
+    return typeof value == 'string' || !isArray(value) && isObjectLike(value) && baseGetTag(value) == stringTag;
   }
 
   /**
@@ -3414,7 +3382,7 @@
     if (typeof value == 'string') {
       return value;
     }
-    return value == null ? '' : (value + '');
+    return value == null ? '' : value + '';
   }
 
   /*------------------------------------------------------------------------*/
@@ -3451,7 +3419,7 @@
    * _.assign({ 'a': 0 }, new Foo, new Bar);
    * // => { 'a': 1, 'c': 3 }
    */
-  var assign = createAssigner(function(object, source) {
+  var assign = createAssigner(function (object, source) {
     copyObject(source, nativeKeys(source), object);
   });
 
@@ -3486,7 +3454,7 @@
    * _.assignIn({ 'a': 0 }, new Foo, new Bar);
    * // => { 'a': 1, 'b': 2, 'c': 3, 'd': 4 }
    */
-  var assignIn = createAssigner(function(object, source) {
+  var assignIn = createAssigner(function (object, source) {
     copyObject(source, nativeKeysIn(source), object);
   });
 
@@ -3550,7 +3518,7 @@
    * _.defaults({ 'a': 1 }, { 'b': 2 }, { 'a': 3 });
    * // => { 'a': 1, 'b': 2 }
    */
-  var defaults = baseRest(function(object, sources) {
+  var defaults = baseRest(function (object, sources) {
     object = Object(object);
 
     var index = -1;
@@ -3571,8 +3539,7 @@
         var key = props[propsIndex];
         var value = object[key];
 
-        if (value === undefined ||
-            (eq(value, objectProto[key]) && !hasOwnProperty.call(object, key))) {
+        if (value === undefined || eq(value, objectProto[key]) && !hasOwnProperty.call(object, key)) {
           object[key] = source[key];
         }
       }
@@ -3684,7 +3651,7 @@
    * _.pick(object, ['a', 'c']);
    * // => { 'a': 1, 'c': 3 }
    */
-  var pick = flatRest(function(object, paths) {
+  var pick = flatRest(function (object, paths) {
     return object == null ? {} : basePick(object, paths);
   });
 
@@ -3787,9 +3754,7 @@
    */
   function escape(string) {
     string = toString(string);
-    return (string && reHasUnescapedHtml.test(string))
-      ? string.replace(reUnescapedHtml, escapeHtmlChar)
-      : string;
+    return string && reHasUnescapedHtml.test(string) ? string.replace(reUnescapedHtml, escapeHtmlChar) : string;
   }
 
   /*------------------------------------------------------------------------*/
@@ -3930,8 +3895,7 @@
     var props = keys(source),
         methodNames = baseFunctions(source, props);
 
-    if (options == null &&
-        !(isObject(source) && (methodNames.length || !props.length))) {
+    if (options == null && !(isObject(source) && (methodNames.length || !props.length))) {
       options = source;
       source = object;
       object = this;
@@ -3940,11 +3904,11 @@
     var chain = !(isObject(options) && 'chain' in options) || !!options.chain,
         isFunc = isFunction(object);
 
-    baseEach(methodNames, function(methodName) {
+    baseEach(methodNames, function (methodName) {
       var func = source[methodName];
       object[methodName] = func;
       if (isFunc) {
-        object.prototype[methodName] = function() {
+        object.prototype[methodName] = function () {
           var chainAll = this.__chain__;
           if (chain || chainAll) {
             var result = object(this.__wrapped__),
@@ -3994,9 +3958,9 @@
    * _.times(2, _.noop);
    * // => [undefined, undefined]
    */
-  function noop() {
-    // No operation performed.
-  }
+  function noop() {}
+  // No operation performed.
+
 
   /**
    * Generates a unique ID. If `prefix` is given, the ID is appended to it.
@@ -4041,9 +4005,7 @@
    * // => undefined
    */
   function max(array) {
-    return (array && array.length)
-      ? baseExtremum(array, identity, baseGt)
-      : undefined;
+    return array && array.length ? baseExtremum(array, identity, baseGt) : undefined;
   }
 
   /**
@@ -4065,9 +4027,7 @@
    * // => undefined
    */
   function min(array) {
-    return (array && array.length)
-      ? baseExtremum(array, identity, baseLt)
-      : undefined;
+    return array && array.length ? baseExtremum(array, identity, baseLt) : undefined;
   }
 
   /*------------------------------------------------------------------------*/
@@ -4149,15 +4109,15 @@
   lodash.each = forEach;
   lodash.first = head;
 
-  mixin(lodash, (function() {
+  mixin(lodash, function () {
     var source = {};
-    baseForOwn(lodash, function(func, methodName) {
+    baseForOwn(lodash, function (func, methodName) {
       if (!hasOwnProperty.call(lodash.prototype, methodName)) {
         source[methodName] = func;
       }
     });
     return source;
-  }()), { 'chain': false });
+  }(), { 'chain': false });
 
   /*------------------------------------------------------------------------*/
 
@@ -4171,18 +4131,18 @@
   lodash.VERSION = VERSION;
 
   // Add `Array` methods to `lodash.prototype`.
-  baseEach(['pop', 'join', 'replace', 'reverse', 'split', 'push', 'shift', 'sort', 'splice', 'unshift'], function(methodName) {
+  baseEach(['pop', 'join', 'replace', 'reverse', 'split', 'push', 'shift', 'sort', 'splice', 'unshift'], function (methodName) {
     var func = (/^(?:replace|split)$/.test(methodName) ? String.prototype : arrayProto)[methodName],
         chainName = /^(?:push|sort|unshift)$/.test(methodName) ? 'tap' : 'thru',
         retUnwrapped = /^(?:pop|join|replace|shift)$/.test(methodName);
 
-    lodash.prototype[methodName] = function() {
+    lodash.prototype[methodName] = function () {
       var args = arguments;
       if (retUnwrapped && !this.__chain__) {
         var value = this.value();
         return func.apply(isArray(value) ? value : [], args);
       }
-      return this[chainName](function(value) {
+      return this[chainName](function (value) {
         return func.apply(isArray(value) ? value : [], args);
       });
     };
@@ -4194,7 +4154,7 @@
   /*--------------------------------------------------------------------------*/
 
   // Some AMD build optimizers, like r.js, check for condition patterns like:
-  if (typeof define == 'function' && typeof define.amd == 'object' && define.amd) {
+  if (typeof define == 'function' && _typeof(define.amd) == 'object' && define.amd) {
     // Expose Lodash on the global object to prevent errors when Lodash is
     // loaded by a script tag in the presence of an AMD loader.
     // See http://requirejs.org/docs/errors.html#mismatch for more details.
@@ -4203,19 +4163,19 @@
 
     // Define as an anonymous module so, through path mapping, it can be
     // referenced as the "underscore" module.
-    define(function() {
+    define(function () {
       return lodash;
     });
   }
   // Check for `exports` after `define` in case a build optimizer adds it.
   else if (freeModule) {
-    // Export for Node.js.
-    (freeModule.exports = lodash)._ = lodash;
-    // Export for CommonJS support.
-    freeExports._ = lodash;
-  }
-  else {
-    // Export to the global object.
-    root._ = lodash;
-  }
-}.call(this));
+      // Export for Node.js.
+      (freeModule.exports = lodash)._ = lodash;
+      // Export for CommonJS support.
+      freeExports._ = lodash;
+    } else {
+      // Export to the global object.
+      root._ = lodash;
+    }
+}).call(undefined);
+//# sourceMappingURL=jquery.jquery-orgchart.js.map

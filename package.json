@@ -8,7 +8,10 @@
     "test": "grunt qunit"
   },
   "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.7.0",
     "grunt": "~0.4.5",
+    "grunt-babel": "^7.0.0",
     "grunt-contrib-clean": "~0.4.0",
     "grunt-contrib-concat": "~0.3.0",
     "grunt-contrib-cssmin": "^2.2.1",
